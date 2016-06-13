@@ -25,6 +25,15 @@ class ConfigurationRetriever
 
   _storeInCache: (record, callback) =>
     {flowId, instanceId, flowData} = record
+
+    @_storeNodesInCache {flowId, instanceId, flowData}, (error) =>
+      return callback error if error?
+      @_storeInstanceId {flowId, instanceId}, callback
+
+  _storeInstanceId: ({flowId, instanceId}, callback) =>
+    @cache.hset flowId, instanceId, Date.now(), callback
+
+  _storeNodesInCache: ({flowId, instanceId, flowData}, callback) =>
     flowData = JSON.parse flowData
 
     async.each _.keys(flowData), (key, next) =>

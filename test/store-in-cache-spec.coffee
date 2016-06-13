@@ -29,6 +29,12 @@ describe 'Store in Cache', ->
     @sut = new ConfigurationRetriever cache: @cache, datastore: @datastore
     @sut.synchronizeByFlowIdAndInstanceId 'flow-id', 'instance-id', done
 
+  it 'should create an instance-id key', (done) ->
+    @cache.hexists 'flow-id', 'instance-id', (error, exist) =>
+      return done error if error?
+      expect(exist).to.equal 1
+      done()
+
   it 'should cache the flow config configuration', (done) ->
     @cache.hget 'flow-id', 'instance-id/node-id/config', (error, config) =>
       return done error if error?
