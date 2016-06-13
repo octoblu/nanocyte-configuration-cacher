@@ -27,7 +27,7 @@ describe 'Store in Cache', ->
 
   beforeEach 'synchronizeByFlowIdAndInstanceId', (done) ->
     @sut = new ConfigurationRetriever cache: @cache, datastore: @datastore
-    @sut.synchronizeByFlowIdAndInstanceId 'flow-id', 'instance-id', (error, @configuration) => done error
+    @sut.synchronizeByFlowIdAndInstanceId 'flow-id', 'instance-id', done
 
   it 'should cache the flow config configuration', (done) ->
     @cache.hget 'flow-id', 'instance-id/node-id/config', (error, config) =>

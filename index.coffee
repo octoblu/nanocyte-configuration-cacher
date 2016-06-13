@@ -5,11 +5,20 @@ class ConfigurationRetriever
   constructor: ({@cache, @datastore}) ->
 
   synchronizeByFlowIdAndInstanceId: (flowId, instanceId, callback) =>
-    @datastore.findOne {flowId, instanceId}, (error, record) =>
+    @_isCached {flowId, instanceId}, (error, cached) =>
       return callback error if error?
-      @_storeInCache record, (error) =>
+      return callback() if cached
+
+      @datastore.findOne {flowId, instanceId}, (error, record) =>
         return callback error if error?
-        return callback null, record.flowData
+        @_storeInCache record, (error) =>
+          return callback error if error?
+          return callback null, record.flowData
+
+  _isCached: ({flowId, instanceId}, callback) =>
+    @cache.hexists flowId, instanceId, (error, result) =>
+      return callback error if error?
+      callback null, (result == 1)
 
   _storeInCache: (record, callback) =>
     {flowId, instanceId, flowData} = record
