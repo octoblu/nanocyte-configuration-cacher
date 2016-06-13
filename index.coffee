@@ -3,6 +3,8 @@ _     = require 'lodash'
 
 class ConfigurationRetriever
   constructor: ({@cache, @datastore}) ->
+    throw new Error 'cache is required' unless @cache?
+    throw new Error 'datastore is required' unless @datastore?
 
   synchronizeByFlowIdAndInstanceId: (flowId, instanceId, callback) =>
     @_isCached {flowId, instanceId}, (error, cached) =>
