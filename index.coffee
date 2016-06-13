@@ -11,6 +11,7 @@ class ConfigurationRetriever
 
       @datastore.findOne {flowId, instanceId}, (error, record) =>
         return callback error if error?
+        return callback() unless record?
         @_storeInCache record, (error) =>
           return callback error if error?
           return callback null
