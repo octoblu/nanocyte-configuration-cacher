@@ -19,7 +19,7 @@ describe 'Store in Cache', ->
     @datastore.insert {
       flowId: 'flow-id'
       instanceId: 'instance-id'
-      flowData:
+      flowData: JSON.stringify
         'node-id':
           config: {foo: 'bar'}
           data:   {bar: 'foo'}

@@ -13,7 +13,7 @@ class ConfigurationRetriever
         return callback error if error?
         @_storeInCache record, (error) =>
           return callback error if error?
-          return callback null, record.flowData
+          return callback null
 
   _isCached: ({flowId, instanceId}, callback) =>
     @cache.hexists flowId, instanceId, (error, result) =>
@@ -22,6 +22,7 @@ class ConfigurationRetriever
 
   _storeInCache: (record, callback) =>
     {flowId, instanceId, flowData} = record
+    flowData = JSON.parse flowData
 
     async.each _.keys(flowData), (key, next) =>
       nodeConfig = flowData[key]
