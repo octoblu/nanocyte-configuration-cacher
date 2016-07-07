@@ -50,4 +50,7 @@ class ConfigurationRetriever
 
     , callback
 
+  clearByFlowIdAndInstanceId: (flowId, instanceId, callback) =>
+    @cache.hdel flowId, instanceId, callback
+
 module.exports = ConfigurationRetriever
