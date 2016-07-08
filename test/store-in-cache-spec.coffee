@@ -4,6 +4,9 @@
 mongojs = require 'mongojs'
 redis   = require 'ioredis'
 ConfigurationRetriever = require '../'
+crypto = require 'crypto'
+
+hash = (flowData) -> crypto.createHash('sha256').update(flowData).digest 'hex'
 
 describe 'Store in Cache', ->
   beforeEach 'connect to cache', (done) ->
@@ -16,13 +19,18 @@ describe 'Store in Cache', ->
     @datastore.remove done
 
   beforeEach 'insert instances', (done) ->
+    flowData = JSON.stringify
+      'node-id':
+        config: {foo: 'bar'}
+        data:   {bar: 'foo'}
+
+    @theHash = hash(flowData)
+
     @datastore.insert {
       flowId: 'flow-id'
       instanceId: 'instance-id'
-      flowData: JSON.stringify
-        'node-id':
-          config: {foo: 'bar'}
-          data:   {bar: 'foo'}
+      flowData: flowData
+      hash: @theHash
     }, done
 
   beforeEach 'synchronizeByFlowIdAndInstanceId', (done) ->
@@ -30,7 +38,7 @@ describe 'Store in Cache', ->
     @sut.synchronizeByFlowIdAndInstanceId 'flow-id', 'instance-id', done
 
   it 'should create an instance-id key', (done) ->
-    @cache.hexists 'flow-id', 'instance-id', (error, exist) =>
+    @cache.hexists 'flow-id', "hash/instance-id/#{@theHash}", (error, exist) =>
       return done error if error?
       expect(exist).to.equal 1
       done()

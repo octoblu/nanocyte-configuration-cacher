@@ -14,24 +14,28 @@ class ConfigurationRetriever
       @datastore.findOne {flowId, instanceId}, (error, record) =>
         return callback error if error?
         return callback() unless record?
+
         @_storeInCache record, (error) =>
           return callback error if error?
           return callback null
 
-  _isCached: ({flowId, instanceId}, callback) =>
-    @cache.hexists flowId, instanceId, (error, result) =>
+  _isCached: ({flowId, instanceId}, callback) =>    
+    @datastore.findOne {flowId, instanceId}, {hash: true}, (error, {hash}={}) =>
       return callback error if error?
-      callback null, (result == 1)
+      return callback null, true unless hash?
+
+      @cache.hexists "#{flowId}", "hash/#{instanceId}/#{hash}", (error, result) =>
+        return callback error if error?
+        callback null, (result == 1)
 
   _storeInCache: (record, callback) =>
-    {flowId, instanceId, flowData} = record
-
+    {flowId, instanceId, flowData, hash} = record
     @_storeNodesInCache {flowId, instanceId, flowData}, (error) =>
       return callback error if error?
-      @_storeInstanceId {flowId, instanceId}, callback
+      @_storeInstanceId {flowId, instanceId, hash}, callback
 
-  _storeInstanceId: ({flowId, instanceId}, callback) =>
-    @cache.hset flowId, instanceId, Date.now(), callback
+  _storeInstanceId: ({flowId, instanceId, hash}, callback) =>
+    @cache.hset "#{flowId}", "hash/#{instanceId}/#{hash}", Date.now(), callback
 
   _storeNodesInCache: ({flowId, instanceId, flowData}, callback) =>
     flowData = JSON.parse flowData
