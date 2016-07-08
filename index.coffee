@@ -19,12 +19,12 @@ class ConfigurationRetriever
           return callback error if error?
           return callback null
 
-  _isCached: ({flowId, instanceId}, callback) =>    
+  _isCached: ({flowId, instanceId}, callback) =>
     @datastore.findOne {flowId, instanceId}, {hash: true}, (error, {hash}={}) =>
       return callback error if error?
       return callback null, true unless hash?
 
-      @cache.hexists "#{flowId}", "hash/#{instanceId}/#{hash}", (error, result) =>
+      @cache.hexists flowId, "#{instanceId}/hash/#{hash}", (error, result) =>
         return callback error if error?
         callback null, (result == 1)
 
@@ -35,7 +35,7 @@ class ConfigurationRetriever
       @_storeInstanceId {flowId, instanceId, hash}, callback
 
   _storeInstanceId: ({flowId, instanceId, hash}, callback) =>
-    @cache.hset "#{flowId}", "hash/#{instanceId}/#{hash}", Date.now(), callback
+    @cache.hset flowId, "#{instanceId}/hash/#{hash}", Date.now(), callback
 
   _storeNodesInCache: ({flowId, instanceId, flowData}, callback) =>
     flowData = JSON.parse flowData

@@ -37,7 +37,7 @@ describe 'Already cached', ->
 
   beforeEach 'connect to cache', (done) ->
     @cache = redis.createClient()
-    @cache.hset 'flow-id', "hash/instance-id/#{@theHash}", Date.now(), done
+    @cache.hset 'flow-id', "instance-id/hash/#{@theHash}", Date.now(), done
 
   beforeEach 'synchronizeByFlowIdAndInstanceId', (done) ->
     @sut = new ConfigurationRetriever {@cache, @datastore}

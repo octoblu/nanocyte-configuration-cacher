@@ -38,7 +38,7 @@ describe 'Store in Cache', ->
     @sut.synchronizeByFlowIdAndInstanceId 'flow-id', 'instance-id', done
 
   it 'should create an instance-id key', (done) ->
-    @cache.hexists 'flow-id', "hash/instance-id/#{@theHash}", (error, exist) =>
+    @cache.hexists 'flow-id', "instance-id/hash/#{@theHash}", (error, exist) =>
       return done error if error?
       expect(exist).to.equal 1
       done()
