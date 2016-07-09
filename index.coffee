@@ -41,6 +41,7 @@ class ConfigurationRetriever
 
   _storeInstanceId: ({flowId, instanceId, hash}, callback) =>
     return @cache.hset flowId, instanceId, Date.now(), callback unless hash?
+
     @cache.hset flowId, "#{instanceId}/hash/#{hash}", Date.now(), callback
 
   _storeNodesInCache: ({flowId, instanceId, flowData}, callback) =>
@@ -61,6 +62,8 @@ class ConfigurationRetriever
     , callback
 
   clearByFlowIdAndInstanceId: (flowId, instanceId, callback) =>
-    @cache.hdel flowId, instanceId, callback
+    @datastore.findOne {flowId, instanceId}, {hash: true}, (error, {hash}={}) =>
+      return @cache.hdel flowId, instanceId, callback unless hash?
+      @cache.hdel flowId, "#{instanceId}/hash/#{hash}", callback
 
 module.exports = ConfigurationRetriever
