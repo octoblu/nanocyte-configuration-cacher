@@ -8,7 +8,7 @@ class ConfigurationRetriever
 
   synchronizeByFlowIdAndInstanceId: (flowId, instanceId, callback) =>
     @_isCached {flowId, instanceId}, (error, cached) =>
-      return callback error if error?
+      return callback error if error?      
       return callback() if cached
 
       @datastore.findOne {flowId, instanceId}, (error, record) =>
@@ -35,9 +35,15 @@ class ConfigurationRetriever
 
   _storeInCache: (record, callback) =>
     {flowId, instanceId, flowData, hash} = record
+    flowData = JSON.parse flowData
+
     @_storeNodesInCache {flowId, instanceId, flowData}, (error) =>
       return callback error if error?
-      @_storeInstanceId {flowId, instanceId, hash}, callback
+      @_storeInstanceId {flowId, instanceId, hash}, (error) =>
+        return callback error if error?
+        {bluprint} = flowData
+        return callback() unless bluprint?
+        @synchronizeByFlowIdAndInstanceId bluprint.config?.appId, bluprint.config?.version, callback
 
   _storeInstanceId: ({flowId, instanceId, hash}, callback) =>
     return @cache.hset flowId, instanceId, Date.now(), callback unless hash?
@@ -45,7 +51,6 @@ class ConfigurationRetriever
     @cache.hset flowId, "#{instanceId}/hash/#{hash}", Date.now(), callback
 
   _storeNodesInCache: ({flowId, instanceId, flowData}, callback) =>
-    flowData = JSON.parse flowData
 
     async.each _.keys(flowData), (key, next) =>
       nodeConfig = flowData[key]
