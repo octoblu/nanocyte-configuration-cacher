@@ -48,8 +48,8 @@ describe 'Store in Cache', ->
 
     @iotAppHash = hash(flowData)
     @datastore.insert {
-      flowId: 'the-app-id'
-      instanceId: '1.0.0'
+      appId: 'the-app-id'
+      version: '1.0.0'
       flowData: flowData
       hash: @iotAppHash
     }, done
@@ -59,19 +59,19 @@ describe 'Store in Cache', ->
     @sut.synchronizeByFlowIdAndInstanceId 'flow-id', 'instance-id', done
 
   it 'should create an instance-id key', (done) ->
-    @cache.hexists 'the-app-id', "1.0.0/hash/#{@iotAppHash}", (error, exist) =>
+    @cache.hexists 'bluprint/the-app-id', "1.0.0/hash/#{@iotAppHash}", (error, exist) =>
       return done error if error?
       expect(exist).to.equal 1
       done()
 
   it 'should cache the flow config configuration', (done) ->
-    @cache.hget 'the-app-id', '1.0.0/node-id/config', (error, config) =>
+    @cache.hget 'bluprint/the-app-id', '1.0.0/node-id/config', (error, config) =>
       return done error if error?
       expect(config).to.deep.equal '{"foo":"bar"}'
       done()
 
   it 'should cache the flow data configuration', (done) ->
-    @cache.hget 'the-app-id', '1.0.0/node-id/data', (error, data) =>
+    @cache.hget 'bluprint/the-app-id', '1.0.0/node-id/data', (error, data) =>
       return done error if error?
       expect(data).to.deep.equal '{"bar":"foo"}'
       done()

@@ -1,14 +1,16 @@
 async = require 'async'
 _     = require 'lodash'
 
-class ConfigurationRetriever
+IotAppSynchronizer = require './iot-app-synchronizer'
+
+class ConfigurationSynchronizer
   constructor: ({@cache, @datastore}) ->
     throw new Error 'cache is required' unless @cache?
     throw new Error 'datastore is required' unless @datastore?
 
   synchronizeByFlowIdAndInstanceId: (flowId, instanceId, callback) =>
     @_isCached {flowId, instanceId}, (error, cached) =>
-      return callback error if error?      
+      return callback error if error?
       return callback() if cached
 
       @datastore.findOne {flowId, instanceId}, (error, record) =>
@@ -43,11 +45,11 @@ class ConfigurationRetriever
         return callback error if error?
         {bluprint} = flowData
         return callback() unless bluprint?
-        @synchronizeByFlowIdAndInstanceId bluprint.config?.appId, bluprint.config?.version, callback
+        iotAppSynchronizer = new IotAppSynchronizer {@cache,@datastore}
+        iotAppSynchronizer.synchronizeByAppIdAndVersion bluprint.config?.appId, bluprint.config?.version, callback
 
   _storeInstanceId: ({flowId, instanceId, hash}, callback) =>
     return @cache.hset flowId, instanceId, Date.now(), callback unless hash?
-
     @cache.hset flowId, "#{instanceId}/hash/#{hash}", Date.now(), callback
 
   _storeNodesInCache: ({flowId, instanceId, flowData}, callback) =>
@@ -71,4 +73,4 @@ class ConfigurationRetriever
       return @cache.hdel flowId, instanceId, callback unless hash?
       @cache.hdel flowId, "#{instanceId}/hash/#{hash}", callback
 
-module.exports = ConfigurationRetriever
+module.exports = ConfigurationSynchronizer
