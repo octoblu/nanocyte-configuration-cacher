@@ -53,7 +53,6 @@ class ConfigurationSynchronizer
     @cache.hset flowId, "#{instanceId}/hash/#{hash}", Date.now(), callback
 
   _storeNodesInCache: ({flowId, instanceId, flowData}, callback) =>
-
     async.each _.keys(flowData), (key, next) =>
       nodeConfig = flowData[key]
       nodeConfig.data ?= {}

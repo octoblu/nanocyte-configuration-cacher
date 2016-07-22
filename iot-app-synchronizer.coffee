@@ -44,20 +44,21 @@ class IotAppSynchronizer
     @cache.hset "bluprint/#{appId}", "#{version}/hash/#{hash}", Date.now(), callback
 
   _storeNodesInCache: ({appId, version, flowData}, callback) =>
+    @cache.del "bluprint/#{appId}", (error) =>
+      return callback error if error?
+      async.each _.keys(flowData), (key, next) =>
+        nodeConfig = flowData[key]
+        nodeConfig.data ?= {}
+        nodeConfig.config ?= {}
 
-    async.each _.keys(flowData), (key, next) =>
-      nodeConfig = flowData[key]
-      nodeConfig.data ?= {}
-      nodeConfig.config ?= {}
+        data = [
+          "#{version}/#{key}/data", JSON.stringify nodeConfig.data
+          "#{version}/#{key}/config", JSON.stringify nodeConfig.config
+        ]
 
-      data = [
-        "#{version}/#{key}/data", JSON.stringify nodeConfig.data
-        "#{version}/#{key}/config", JSON.stringify nodeConfig.config
-      ]
+        @cache.hmset "bluprint/#{appId}", data..., next
 
-      @cache.hmset "bluprint/#{appId}", data..., next
-
-    , callback
+      , callback
 
   clearByAppIdAndVersionId: (appId, version, callback) =>
     @datastore.findOne {appId, version}, {hash: true}, (error, {hash}={}) =>
