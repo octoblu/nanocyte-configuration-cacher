@@ -8,7 +8,7 @@ crypto = require 'crypto'
 
 hash = (flowData) -> crypto.createHash('sha256').update(flowData).digest 'hex'
 
-describe 'Store in Cache', ->
+describe 'Store in Cache IoT App', ->
   beforeEach 'connect to cache', (done) ->
     @cache = redis.createClient()
     @cache.del 'flow-id',  =>
@@ -23,7 +23,7 @@ describe 'Store in Cache', ->
     flowData = JSON.stringify
       bluprint:
         config:
-          version: '1.0.0'
+          version: '1'
           appId: 'the-app-id'
       'node-id':
         config: {foo: 'bar'}
@@ -36,7 +36,10 @@ describe 'Store in Cache', ->
       flowId: 'flow-id'
       instanceId: 'instance-id'
       flowData: flowData
-      hash: @theHash
+      hash: @theHash,
+      bluprint:
+        appId: 'the-app-id'
+        version: '1'
     }, done
 
   beforeEach 'insert bluprint', (done) ->
@@ -46,10 +49,10 @@ describe 'Store in Cache', ->
         data:   {bar: 'foo'}
 
 
-    @iotAppHash = hash(flowData)
+    @iotAppHash = hash flowData
     @datastore.insert {
       appId: 'the-app-id'
-      version: '1.0.0'
+      version: '1'
       flowData: flowData
       hash: @iotAppHash
     }, done
@@ -59,19 +62,49 @@ describe 'Store in Cache', ->
     @sut.synchronizeByFlowIdAndInstanceId 'flow-id', 'instance-id', done
 
   it 'should create an instance-id key', (done) ->
-    @cache.hexists 'bluprint/the-app-id', "1.0.0/hash/#{@iotAppHash}", (error, exist) =>
+    @cache.hexists 'bluprint/the-app-id', "1/hash/#{@iotAppHash}", (error, exist) =>
       return done error if error?
       expect(exist).to.equal 1
       done()
 
   it 'should cache the flow config configuration', (done) ->
-    @cache.hget 'bluprint/the-app-id', '1.0.0/node-id/config', (error, config) =>
+    @cache.hget 'bluprint/the-app-id', '1/node-id/config', (error, config) =>
       return done error if error?
       expect(config).to.deep.equal '{"foo":"bar"}'
       done()
 
   it 'should cache the flow data configuration', (done) ->
-    @cache.hget 'bluprint/the-app-id', '1.0.0/node-id/data', (error, data) =>
+    @cache.hget 'bluprint/the-app-id', '1/node-id/data', (error, data) =>
       return done error if error?
       expect(data).to.deep.equal '{"bar":"foo"}'
       done()
+
+  describe 'when the bluprint changes in mongo', ->
+    beforeEach 'alter the bluprint in mongo', (done) ->
+      flowData = JSON.stringify
+        'a-different-node':
+          config: {different: 'stuff'}
+          data:   {every: 'where'}
+
+
+      @newIotAppHash = hash flowData
+      @datastore.update(
+        {appId: 'the-app-id'},
+        {
+          appId: 'the-app-id'
+          version: '1'
+          flowData: flowData
+          hash: @newIotAppHash
+        }
+        done
+      )
+
+    beforeEach 'synchronizeByFlowIdAndInstanceId', (done) ->
+      @sut = new ConfigurationRetriever cache: @cache, datastore: @datastore
+      @sut.synchronizeByFlowIdAndInstanceId 'flow-id', 'instance-id', done
+
+    it 'should cache the new bluprint configuration', (done) ->
+      @cache.hget 'bluprint/the-app-id', '1/a-different-node/data', (error, data) =>
+        return done error if error?
+        expect(data).to.deep.equal '{"every":"where"}'
+        done()

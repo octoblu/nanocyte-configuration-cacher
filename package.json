@@ -1,6 +1,6 @@
 {
   "name": "nanocyte-configuration-synchronizer",
-  "version": "2.5.2",
+  "version": "2.5.3",
   "description": "Cache the configurations in Redis",
   "main": "index.js",
   "scripts": {

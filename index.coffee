@@ -22,13 +22,17 @@ class ConfigurationSynchronizer
           return callback null
 
   _isCached: ({flowId, instanceId}, callback) =>
-    @datastore.findOne {flowId, instanceId}, {hash: true}, (error, {hash}={}) =>
+    @datastore.findOne {flowId, instanceId}, {hash: true, bluprint: true}, (error, {hash, bluprint}={}) =>
+
       return callback error if error?
       return @_oldIsCached({flowId, instanceId}, callback) unless hash?
 
       @cache.hexists flowId, "#{instanceId}/hash/#{hash}", (error, result) =>
-        return callback error if error?
-        callback null, (result == 1)
+        return callback error, (result == 1) unless bluprint?
+        iotAppSynchronizer = new IotAppSynchronizer {@cache,@datastore}
+        iotAppSynchronizer.synchronizeByAppIdAndVersion bluprint.appId, bluprint.version, (error) =>
+          return callback error if error?
+          callback null, (result == 1)
 
   _oldIsCached: ({flowId, instanceId}, callback) =>
      @cache.hexists flowId, instanceId, (error, result) =>
@@ -41,13 +45,8 @@ class ConfigurationSynchronizer
 
     @_storeNodesInCache {flowId, instanceId, flowData}, (error) =>
       return callback error if error?
-      @_storeInstanceId {flowId, instanceId, hash}, (error) =>
-        return callback error if error?
-        {bluprint} = flowData
-        return callback() unless bluprint?
-        iotAppSynchronizer = new IotAppSynchronizer {@cache,@datastore}
-        iotAppSynchronizer.synchronizeByAppIdAndVersion bluprint.config?.appId, bluprint.config?.version, callback
-
+      @_storeInstanceId {flowId, instanceId, hash}, callback
+      
   _storeInstanceId: ({flowId, instanceId, hash}, callback) =>
     return @cache.hset flowId, instanceId, Date.now(), callback unless hash?
     @cache.hset flowId, "#{instanceId}/hash/#{hash}", Date.now(), callback
